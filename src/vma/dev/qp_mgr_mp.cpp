@@ -56,7 +56,7 @@ cq_mgr* qp_mgr_mp::init_rx_cq_mgr(struct ibv_comp_channel* p_rx_comp_event_chann
 	uint32_t cq_size = align32pow2((m_p_mp_ring->get_strides_num() *
 					m_p_mp_ring->get_wq_count()));
 	return new cq_mgr_mp(m_p_mp_ring, m_p_ib_ctx_handler, cq_size,
-			     p_rx_comp_event_channel, true);
+			     p_rx_comp_event_channel, true, m_external_mem);
 }
 
 int qp_mgr_mp::prepare_ibv_qp(vma_ibv_qp_init_attr& qp_init_attr)
@@ -235,6 +235,22 @@ int qp_mgr_mp::post_recv(uint32_t sg_index, uint32_t num_of_sge)
 	}
 	return m_p_wq_family->recv_burst(m_p_wq, &m_ibv_rx_sg_array[sg_index],
 			num_of_sge);
+}
+
+bool qp_mgr_mp::fill_hw_descriptors(vma_mlx_hw_device_data &data)
+{
+	struct mlx5_rwq *mrwq = container_of(m_p_wq, struct mlx5_rwq, wq);
+
+	data.rq_data.wq_data.buf       = (uint8_t *)mrwq->buf.buf + mrwq->rq.offset;
+	data.rq_data.wq_data.dbrec     = mrwq->db;
+	data.rq_data.wq_data.wqe_cnt   = mrwq->rq.wqe_cnt;
+	data.rq_data.wq_data.stride    = (1 << mrwq->rq.wqe_shift);
+
+	qp_logdbg("QP: %d  WQ: dbrec: %p buf: %p wqe_cnt: %d stride: %d ",
+		m_qp->qp_num, data.rq_data.wq_data.dbrec,
+		data.rq_data.wq_data.buf, data.rq_data.wq_data.wqe_cnt,
+		data.rq_data.wq_data.stride);
+	return true;
 }
 
 qp_mgr_mp::~qp_mgr_mp()

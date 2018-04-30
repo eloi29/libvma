@@ -71,6 +71,7 @@ public:
 	uint32_t	get_mem_lkey(ib_ctx_handler* ib_ctx) const {return m_alloc.find_lkey_by_ib_ctx(ib_ctx);}
 	virtual int	drain_and_proccess();
 	virtual int	poll_and_process_element_rx(uint64_t* p_cq_poll_sn, void* pv_fd_ready_array = NULL);
+	int		get_mem_info(ibv_sge &mem_info);
 	int		cyclic_buffer_read(vma_completion_cb_t &completion,
 					   size_t min, size_t max, int flags);
 protected:
@@ -106,6 +107,7 @@ private:
 	struct ibv_exp_send_wr		m_umr_wr;
 	struct ibv_exp_res_domain*	m_res_domain;
 	struct ibv_mr*			m_p_umr_mr;
+	bool				m_external_mem;
 	inline mp_loop_result		mp_loop(size_t limit);
 	inline mp_loop_result		mp_loop_padded(size_t limit);
 	inline bool			reload_wq();

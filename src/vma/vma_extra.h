@@ -259,6 +259,7 @@ typedef enum {
 
 typedef enum {
 	VMA_CB_HDR_BYTE = (1 << 0),
+	VMA_CB_EXTERNAL_MEM = (1 << 1),
 } vma_cb_ring_attr_mask;
 
 /**
@@ -352,7 +353,9 @@ struct vma_ring_type_attr {
 };
 
 typedef enum {
-	VMA_HW_RESERVED
+	VMA_HW_PP_EN = (1 << 0),
+	VMA_HW_UMR_EN = (1 << 1),
+	VMA_HW_MP_RQ_EN = (1 << 2),
 } mlx_hw_device_cap;
 
 struct dev_data {
@@ -759,6 +762,15 @@ struct __attribute__ ((packed)) vma_api_t {
 	 * @note - this function doens't free the memory
 	 */
 	int (*deregister_memory_on_ring)(int fd, void *addr, size_t length);
+
+	/**
+	 * returns memory information for the ring fd
+	 * @param fd - ring fd
+	 * @param addr - the buffer address used
+	 * @return 0 on success, -1 on failure
+	 *
+	 */
+	int (*get_mem_info)(int fd, void **addr, size_t *length, uint32_t *lkey);
 };
 
 

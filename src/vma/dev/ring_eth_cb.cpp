@@ -62,6 +62,7 @@ ring_eth_cb::ring_eth_cb(in_addr_t local_if,
 			,m_curr_payload_addr(NULL)
 			,m_curr_hdr_ptr(NULL)
 			,m_res_domain(NULL)
+			,m_external_mem(cb_ring->comp_mask & VMA_CB_EXTERNAL_MEM)
 
 {
 	// call function from derived not base
@@ -165,7 +166,22 @@ qp_mgr* ring_eth_cb::create_qp_mgr(const ib_ctx_handler *ib_ctx,
 				   struct ibv_comp_channel *p_rx_comp_event_channel)
 {
 	return new qp_mgr_mp(this, ib_ctx, port_num, p_rx_comp_event_channel,
-			get_tx_num_wr(), get_partition(), m_buff_data);
+			get_tx_num_wr(), get_partition(), m_buff_data,
+			m_external_mem);
+}
+
+int ring_eth_cb::get_mem_info(ibv_sge &mem_info)
+{
+	if (!m_buff_data.addr) {
+		ring_logwarn("no valid memory to return");
+		return -1;
+	}
+	mem_info.addr = m_buff_data.addr;
+	mem_info.length = m_buff_data.length;
+	mem_info.lkey = m_buff_data.lkey;
+	ring_logdbg("returning ptr %p, legnth %zd, lkey %u", mem_info.addr,
+		    mem_info.length, mem_info.lkey);
+	return 0;
 }
 
 /**
